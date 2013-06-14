@@ -21,7 +21,7 @@ else
   else
 	include $(MAKEFILE_GEM_LIST)
 	NGX_MRUBY_CFLAGS = $(GEM_CFLAGS_LIST) $(MRUBY_ROOT)/include
-	TARGET += generate_gems_config
+	TARGET += mrbgems_config
   endif
 endif
 
@@ -40,17 +40,30 @@ clean:
 clobber: clean
 	-rm -rf tmp autom4te.cache config.status config.log
 
+#
 #   nginx 1.2.2
-ngx_mruby:
-	cd $(NGX_SRC_ROOT) && ./configure --add-module=$(NGX_MRUBY_ROOT) $(NGX_CONFIG_OPT) && $(MAKE)
+#
+
+ngx_mruby: mruby $(NGX_SRC_ROOT)/objs/nginx
+
+$(NGX_SRC_ROOT)/objs/nginx/Makefile: Makefile
+	cd $(NGX_SRC_ROOT) && ./configure --add-module=$(NGX_MRUBY_ROOT) $(NGX_CONFIG_OPT)
+
+$(NGX_SRC_ROOT)/objs/nginx: $(NGX_SRC_ROOT)/objs/nginx/Makefile
+	cd $(NGX_SRC_ROOT) && $(MAKE)
+
+#
+# mruby
+#
 
 #   create mrbgems config
-generate_gems_config:
+mrbgems_config:
 	@echo CORE_LIBS=\"\$$CORE_LIBS $(GEM_LDFLAGS_LIST) $(GEM_ARCHIVE_FILES) $(GEM_LIBS_LIST)\" > ./mrbgems_config
 	@echo CORE_INCS=\"\$$CORE_INCS $(NGX_MRUBY_CFLAGS)\" >> ./mrbgems_config
 
 #   create sample mruby build with mrbgems
-mruby_build:
-	sh mymruby_with_mrbgems.sh
+mruby: $(MRUBY_ROOT)/bin/mruby
 
-
+$(MRUBY_ROOT)/mruby: mrbgems_config
+	#sh mymruby_with_mrbgems.sh
+	cd mruby ; make
